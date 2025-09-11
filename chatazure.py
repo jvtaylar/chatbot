@@ -4,9 +4,9 @@ import os
 
 # --- Azure OpenAI Configuration ---
 openai.api_type = "azure"
-openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
+openai.api_base = os.getenv("https://mykey-taylar.openai.azure.com/")
 openai.api_version = "2023-05-15"
-openai.api_key = os.getenv("AZURE_OPENAI_KEY")
+openai.api_key = os.getenv("2BgEjqFAUmro4SVK2oRkkzfbRBRxRkWjF3v9DOspo0ututcy3aleJQQJ99BIACYeBjFXJ3w3AAABACOGk4df")
 DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT")  # Your Azure deployment name
 
 # --- Streamlit UI ---
