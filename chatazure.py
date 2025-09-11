@@ -101,7 +101,7 @@ endpoint = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 model_name = "gpt-35-turbo"
 deployment = "gpt-35-turbo"
 
-subscription_key = "<your-api-key>"
+subscription_key = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
 api_version = "2024-12-01-preview"
 
 client = AzureOpenAI(
