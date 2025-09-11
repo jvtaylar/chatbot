@@ -63,4 +63,4 @@ if user_input:
     st.session_state.messages.append(("Bot", bot_reply))
 
     # Clear input box
-    st.experimental_rerun()
+    st.rerun()
