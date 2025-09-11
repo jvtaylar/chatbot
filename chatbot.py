@@ -1,78 +1,9 @@
-# import streamlit as st
-
-# # Simple rule-based chatbot function
-# def chatbot_response(user_message):
-#     user_message = user_message.lower().strip()
-
-#     if user_message in ["hi", "hello", "hey", "start"]:
-#         return "👋 Hello! How can I help you today?"
-
-#     elif "create account" in user_message or user_message == "1":
-#         return "🕘 We're open 9 AM – 9 PM, Monday to Saturday."
-
-#     elif "track order" in user_message or user_message == "2":
-#         return "📦 Sure! What's your order number?"
-
-#     elif "talk to agent" in user_message or user_message == "3":
-#         return "📞 Okay, I’m forwarding you to our human support staff."
-
-#     else:
-#         return "❓ Sorry, I didn’t understand that. Please choose an option."
-
-# # Streamlit UI
-# st.set_page_config(page_title="Simple Chatbot", page_icon="🤖")
-
-# st.title("🤖 Rule-Based Chatbot with Buttons")
-# st.write("Click a button or type your message below to chat with the bot.")
-
-# # Keep conversation history
-# if "messages" not in st.session_state:
-#     st.session_state.messages = []
-
-# # Reset chat button
-# if st.button("🔄 Reset Chat"):
-#     st.session_state.messages = []
-#     st.rerun()
-
-# # Display conversation
-# for role, msg in st.session_state.messages:
-#     if role == "You":
-#         st.markdown(f"**🧑 {role}:** {msg}")
-#     else:
-#         st.markdown(f"**🤖 {role}:** {msg}")
-
-# # Input section
-# user_input = st.text_input("Type your message:", "")
-
-# col1, col2, col3 = st.columns(3)
-
-# with col1:
-#     if st.button("🕘 Store Hours"):
-#         user_input = "Store Hours"
-
-# with col2:
-#     if st.button("📦 Track Order"):
-#         user_input = "Track Order"
-
-# with col3:
-#     if st.button("📞 Talk to Agent"):
-#         user_input = "Talk to Agent"
-
-# # Process input
-# if user_input:
-#     # Append user message
-#     st.session_state.messages.append(("You", user_input))
-
-#     # Get bot reply
-#     bot_reply = chatbot_response(user_input)
-#     st.session_state.messages.append(("Bot", bot_reply))
-
-#     # Refresh the app to show the updated chat
-#     st.rerun()
-
 import streamlit as st
+import time
 
+# --------------------------
 # Simple rule-based chatbot function
+# --------------------------
 def chatbot_response(user_message):
     user_message = user_message.lower().strip()
 
@@ -80,65 +11,107 @@ def chatbot_response(user_message):
         return "👋 Hello! How can I help you today?"
 
     elif "create account" in user_message or user_message == "1":
-        return "Create an account on this link: https://e-tesda.gov.ph/login/signup.php."
+        return "📝 You can create an account here: [TESDA Signup](https://e-tesda.gov.ph/login/signup.php)"
 
     elif "courses" in user_message or user_message == "2":
-        return "📦 Sure! Here are the courses: https://e-tesda.gov.ph/course"
+        return "📦 Sure! Explore the available courses here: [TESDA Courses](https://e-tesda.gov.ph/course)"
 
     elif "talk to agent" in user_message or user_message == "3":
-        return "📞 Okay, I’m forwarding you to our human support staff."
+        return "📞 Okay, I’m connecting you to our human support staff."
 
     else:
-        return "❓ Sorry, I didn’t understand that. Please choose an option."
+        return "❓ Sorry, I didn’t understand that. Please choose an option below."
 
-# Streamlit UI
-st.set_page_config(page_title="Simple Chatbot", page_icon="🤖")
+# --------------------------
+# Streamlit Page Config
+# --------------------------
+st.set_page_config(page_title="Simple Chatbot", page_icon="🤖", layout="wide")
 
-st.title("🤖 Rule-Based Chatbot with Buttons")
-st.write("Click a button or type your message below to chat with the bot.")
+# --------------------------
+# Sidebar for info
+# --------------------------
+with st.sidebar:
+    st.title("ℹ️ About this Chatbot")
+    st.write("This is a simple **rule-based chatbot** built with Streamlit. You can:")
+    st.markdown("""
+    - 👋 Greet the bot  
+    - 📝 Create an account  
+    - 📦 View courses  
+    - 📞 Talk to a human agent  
+    """)
+    st.success("💡 Tip: Use the quick buttons for faster interaction!")
 
-# Keep conversation history
+# --------------------------
+# Main Title
+# --------------------------
+st.markdown("<h1 style='text-align: center; color: #4CAF50;'>🤖 Rule-Based Chatbot</h1>", unsafe_allow_html=True)
+st.write("Interact with the chatbot by clicking a button or typing your message.")
+
+# --------------------------
+# Conversation History
+# --------------------------
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# Reset chat button
+# Reset chat button with animation
 if st.button("🔄 Reset Chat"):
+    with st.spinner("Clearing chat..."):
+        time.sleep(1)
     st.session_state.messages = []
     st.rerun()
 
-# Display conversation
+# --------------------------
+# Display Chat Conversation with Bubbles
+# --------------------------
 for role, msg in st.session_state.messages:
     if role == "You":
-        st.markdown(f"**🧑 {role}:** {msg}")
+        st.markdown(
+            f"<div style='background-color:#DCF8C6; padding:10px; border-radius:15px; margin:5px; text-align:right;'>"
+            f"🧑 <b>{role}:</b> {msg}</div>",
+            unsafe_allow_html=True,
+        )
     else:
-        st.markdown(f"**🤖 {role}:** {msg}")
+        st.markdown(
+            f"<div style='background-color:#E6E6FA; padding:10px; border-radius:15px; margin:5px; text-align:left;'>"
+            f"🤖 <b>{role}:</b> {msg}</div>",
+            unsafe_allow_html=True,
+        )
 
-# Input section
-user_input = st.text_input("Type your message:", "")
+# --------------------------
+# Input Section
+# --------------------------
+st.markdown("### ✍️ Type your message or use quick actions:")
+
+user_input = st.text_input("Type your message here:", "")
 
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    if st.button("Create Account"):
+    if st.button("📝 Create Account"):
         user_input = "create account"
 
 with col2:
-    if st.button("Courses"):
+    if st.button("📦 Courses"):
         user_input = "courses"
 
 with col3:
     if st.button("📞 Talk to Agent"):
-        user_input = "Talk to Agent"
+        user_input = "talk to agent"
 
-# Process input
+# --------------------------
+# Process User Input
+# --------------------------
 if user_input:
     # Append user message
     st.session_state.messages.append(("You", user_input))
+
+    # Simulate typing effect
+    with st.spinner("Bot is typing..."):
+        time.sleep(1.2)
 
     # Get bot reply
     bot_reply = chatbot_response(user_input)
     st.session_state.messages.append(("Bot", bot_reply))
 
-    # Refresh the app to show the updated chat
+    # Refresh UI
     st.rerun()
-
