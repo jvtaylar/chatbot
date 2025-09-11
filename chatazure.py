@@ -11,12 +11,19 @@ openai.api_version = "2024-12-01-preview"
 openai.api_key = os.getenv("2BgEjqFAUmro4SVK2oRkkzfbRBRxRkWjF3v9DOspo0ututcy3aleJQQJ99BIACYeBjFXJ3w3AAABACOGk4df")
 DEPLOYMENT_NAME = os.getenv("gpt-35-turbo")  # Your Azure deployment name
 
-# endpoint = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
-# model_name = "gpt-35-turbo"
-# deployment = "gpt-35-turbo"
+messages = [
+    {"role": "system", "content": "You are a helpful assistant."},
+    {"role": "user", "content": "Hello"}
+]
 
-# subscription_key = "<your-api-key>"
-# api_version = "2024-12-01-preview"
+response = openai.ChatCompletion.create(
+    deployment_id=DEPLOYMENT_NAME,
+    messages=messages,
+    temperature=0.7,
+    max_tokens=500
+)
+
+print(response.choices[0].message["content"])
 
 
 # --- Streamlit UI ---
