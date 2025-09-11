@@ -93,8 +93,9 @@ import os
 openai.api_type = "azure"
 openai.api_base = os.getenv("https://mykey-taylar.openai.azure.com/")
 openai.api_version = "2023-05-15"
-openai.api_key = os.getenv("2BgEjqFAUmro4SVK2oRkkzfbRBRxRkWjF3v9DOspo0ututcy3aleJQQJ99BIACYeBjFXJ3w3AAABACOGk4df")
-DEPLOYMENT_NAME = os.getenv("Azure subscription 1")  # Your Azure deployment name
+openai.api_key = os.getenv("FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz")
+
+DEPLOYMENT_NAME = os.getenv("gpt-35-turbo")  # Your Azure deployment name
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Copilot-Style Chatbot", page_icon="🤖")
