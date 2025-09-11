@@ -10,7 +10,7 @@ import os
 openai.api_type = "azure"
 openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"  # Your resource endpoint
 openai.api_version = "2025-01-01-preview"  # API version
-openai.api_key = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"  # Your key
+openai.api_key = "MyKey"  # Your key
 
 DEPLOYMENT_NAME = "gpt-35-turbo"  # Your deployed model name
 
