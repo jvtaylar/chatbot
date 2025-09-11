@@ -7,7 +7,7 @@ openai.api_type = "azure"
 openai.api_base = os.getenv("AZURE_OPENAI_ENDPOINT")
 openai.api_version = "2023-05-15"
 openai.api_key = os.getenv("AZURE_OPENAI_KEY")
-DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT")  # Your Azure deployment name
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Copilot-Style Chatbot", page_icon="🤖")
@@ -46,7 +46,7 @@ for i, option in enumerate(preset_options):
 
         try:
             response = openai.ChatCompletion.create(
-                engine=DEPLOYMENT_NAME,
+                deployment_id=DEPLOYMENT_NAME,  # Correct for Azure
                 messages=st.session_state.messages,
                 temperature=0.7,
                 max_tokens=500
@@ -66,7 +66,7 @@ if st.button("Send") and user_input.strip():
 
     try:
         response = openai.ChatCompletion.create(
-            engine=DEPLOYMENT_NAME,
+            deployment_id=DEPLOYMENT_NAME,  # Correct for Azure
             messages=st.session_state.messages,
             temperature=0.7,
             max_tokens=500
