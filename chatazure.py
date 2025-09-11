@@ -90,11 +90,11 @@ import openai
 import os
 
 # # --- Azure OpenAI Configuration ---
-# openai.api_type = "azure"
-# openai.api_base = os.getenv("https://jvtay-mff428jo-eastus2.openai.azure.com/")
-# openai.api_version = "2024-12-01-preview"
-# openai.api_key = os.getenv("FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz")
-# DEPLOYMENT_NAME = os.getenv("gpt-35-turbo")  # Your Azure deployment name
+openai.api_type = "azure"
+openai.api_base = os.getenv("https://jvtay-mff428jo-eastus2.openai.azure.com/")
+openai.api_version = "2024-12-01-preview"
+openai.api_key = os.getenv("FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz")
+DEPLOYMENT_NAME = os.getenv("gpt-35-turbo")  # Your Azure deployment name
 
 # endpoint = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 # model_name = "gpt-35-turbo"
