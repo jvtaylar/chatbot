@@ -94,7 +94,7 @@ import os
 # openai.api_base = os.getenv("https://mykey-taylar.openai.azure.com/")
 # openai.api_version = "2023-05-15"
 # openai.api_key = os.getenv("2BgEjqFAUmro4SVK2oRkkzfbRBRxRkWjF3v9DOspo0ututcy3aleJQQJ99BIACYeBjFXJ3w3AAABACOGk4df")
-# DEPLOYMENT_NAME = os.getenv("Mykey-taylar")  # Your Azure deployment name
+# DEPLOYMENT_NAME = os.getenv("Azure subscription 1")  # Your Azure deployment name
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Copilot-Style Chatbot", page_icon="🤖")
