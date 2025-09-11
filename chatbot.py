@@ -29,6 +29,11 @@ st.write("Click a button or type your message below to chat with the bot.")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Reset chat button
+if st.button("🔄 Reset Chat"):
+    st.session_state.messages = []
+    st.rerun()
+
 # Display conversation
 for role, msg in st.session_state.messages:
     if role == "You":
@@ -62,5 +67,5 @@ if user_input:
     bot_reply = chatbot_response(user_input)
     st.session_state.messages.append(("Bot", bot_reply))
 
-    # Clear input box
+    # Refresh the app to show the updated chat
     st.rerun()
