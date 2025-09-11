@@ -91,24 +91,18 @@ import os
 
 # # --- Azure OpenAI Configuration ---
 # openai.api_type = "azure"
-# openai.api_base = os.getenv("https://mykey-taylar.openai.azure.com/")
-# openai.api_version = "2023-05-15"
+# openai.api_base = os.getenv("https://jvtay-mff428jo-eastus2.openai.azure.com/")
+# openai.api_version = "2024-12-01-preview"
 # openai.api_key = os.getenv("FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz")
-
 # DEPLOYMENT_NAME = os.getenv("gpt-35-turbo")  # Your Azure deployment name
 
-endpoint = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
-model_name = "gpt-35-turbo"
-deployment = "gpt-35-turbo"
+# endpoint = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
+# model_name = "gpt-35-turbo"
+# deployment = "gpt-35-turbo"
 
-subscription_key = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
-api_version = "2024-12-01-preview"
+# subscription_key = "<your-api-key>"
+# api_version = "2024-12-01-preview"
 
-client = AzureOpenAI(
-    api_version=api_version,
-    azure_endpoint=endpoint,
-    api_key=subscription_key,
-)
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="Copilot-Style Chatbot", page_icon="🤖")
