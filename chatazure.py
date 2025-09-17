@@ -9,7 +9,7 @@ import time
 openai.api_type = "azure"
 openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 openai.api_version = "2025-01-01-preview"
-openai.api_key = "2BgEjqFAUmro4SVK2oRkkzfbRBRxRkWjF3v9DOspo0ututcy3aleJQQJ99BIACYeBjFXJ3w3AAABACOGk4df"
+openai.api_key = "465174a9-6754-49cd-8120-7bb5741cbef8"
 
 DEPLOYMENT_NAME = "gpt-35-turbo"
 
