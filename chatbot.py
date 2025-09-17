@@ -58,45 +58,24 @@ if st.button("🔄 Reset Chat"):
     with st.spinner("Clearing chat..."):
         time.sleep(1)
     st.session_state.messages = []
-    st.rerun()
-
-# --------------------------
-# Display Chat Conversation with Bubbles
-# --------------------------
-for role, msg in st.session_state.messages:
-    if role == "You":
-        st.markdown(
-            f"<div style='background-color:#DCF8C6; padding:10px; border-radius:15px; margin:5px; text-align:right;'>"
-            f"🧑 <b>{role}:</b> {msg}</div>",
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            f"<div style='background-color:#E6E6FA; padding:10px; border-radius:15px; margin:5px; text-align:left;'>"
-            f"🤖 <b>{role}:</b> {msg}</div>",
-            unsafe_allow_html=True,
-        )
 
 # --------------------------
 # Input Section
 # --------------------------
 st.markdown("### ✍️ Type your message or use quick actions:")
 
-user_input = st.text_input("Type your message here:", "")
+user_input = st.text_input("Type your message here:", key="user_input")
 
 col1, col2, col3 = st.columns(3)
 
-with col1:
-    if st.button("📝 Create Account"):
-        user_input = "create account"
+if col1.button("📝 Create Account"):
+    user_input = "create account"
 
-with col2:
-    if st.button("📦 Courses"):
-        user_input = "courses"
+if col2.button("📦 Courses"):
+    user_input = "courses"
 
-with col3:
-    if st.button("📞 Talk to Agent"):
-        user_input = "talk to agent"
+if col3.button("📞 Talk to Agent"):
+    user_input = "talk to agent"
 
 # --------------------------
 # Process User Input
@@ -107,11 +86,30 @@ if user_input:
 
     # Simulate typing effect
     with st.spinner("Bot is typing..."):
-        time.sleep(1.2)
+        time.sleep(1.0)
 
     # Get bot reply
     bot_reply = chatbot_response(user_input)
     st.session_state.messages.append(("Bot", bot_reply))
 
-    # Refresh UI
-    st.rerun()
+    # Clear text input after processing
+    st.session_state.user_input = ""
+
+# --------------------------
+# Display Chat Conversation with Bubbles
+# --------------------------
+for role, msg in st.session_state.messages:
+    if role == "You":
+        st.markdown(
+            f"<div style='background-color:#DCF8C6; padding:10px; border-radius:15px; "
+            f"margin:5px; text-align:right;'>"
+            f"🧑 <b>{role}:</b> {msg}</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"<div style='background-color:#E6E6FA; padding:10px; border-radius:15px; "
+            f"margin:5px; text-align:left;'>"
+            f"🤖 <b>{role}:</b> {msg}</div>",
+            unsafe_allow_html=True,
+        )
