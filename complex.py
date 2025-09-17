@@ -51,6 +51,21 @@ if "messages" not in st.session_state:
     st.session_state.messages = [("Bot", "👋 Hi! Welcome to TESDA Chatbot. Type 'help' to see options.")]
 
 # --------------------------
+# Chat Input (auto-clearing)
+# --------------------------
+user_input = st.chat_input("Type your message here...")
+
+if user_input:
+    # Store user input immediately
+    st.session_state.messages.append(("You", user_input))
+
+    # Generate bot reply instantly (no need for st.rerun here)
+    with st.spinner("Bot is typing..."):
+        time.sleep(1.0)
+    bot_reply = chatbot_response(user_input)
+    st.session_state.messages.append(("Bot", bot_reply))
+
+# --------------------------
 # Display Conversation
 # --------------------------
 for role, msg in st.session_state.messages:
@@ -68,15 +83,3 @@ for role, msg in st.session_state.messages:
             f"🤖 <b>{role}:</b> {msg}</div>",
             unsafe_allow_html=True,
         )
-
-# --------------------------
-# Chat Input (auto-clearing)
-# --------------------------
-if user_input := st.chat_input("Type your message here..."):
-    st.session_state.messages.append(("You", user_input))
-
-    with st.spinner("Bot is typing..."):
-        time.sleep(1.2)
-
-    bot_reply = chatbot_response(user_input)
-    st.session_state.messages.append(("Bot", bot_reply))
