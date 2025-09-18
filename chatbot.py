@@ -25,7 +25,7 @@ def chatbot_response(user_message: str) -> str:
 # --------------------------
 # Page config and session
 # --------------------------
-st.set_page_config(page_title="Simple Chatbot (Fixed)", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="Simple Chatbot", page_icon="🤖", layout="wide")
 
 if "messages" not in st.session_state:
     # messages is a list of tuples: (role, text)
