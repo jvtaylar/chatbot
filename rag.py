@@ -30,7 +30,7 @@ _openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 _openai.api_version = "2025-01-01-preview"
 _openai.api_key = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"  
 
-AZURE_DEPLOYMENT_NAME = "gpt-35-mini"  # replace with your deployed model name
+AZURE_DEPLOYMENT_NAME = "gpt-35-turbo"  
 openai = _openai  # shorthand
 
 # --------------------------
