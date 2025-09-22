@@ -1,9 +1,11 @@
 pip
 
-streamlit
-openai
-langchain
-langchain-openai
-langchain-community
+streamlit>=1.20
+openai>=1.0.0
+requests
+beautifulsoup4
 chromadb
-tiktoken
+sentence-transformers
+transformers
+torch
+pysqlite3-binary
