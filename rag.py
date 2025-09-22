@@ -1,9 +1,15 @@
 import streamlit as st
 import os
-from openai import AzureOpenAI
+import openai
+# from openai import AzureOpenAI
 import faiss
 import tiktoken
 import numpy as np
+
+
+# import openai
+# import time
+
 
 # ----------------------------
 # 1. Setup Azure OpenAI client
