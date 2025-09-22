@@ -4,8 +4,6 @@ from langchain.chains import RetrievalQA
 from langchain.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
-from PyPDF2 import PdfReader
-import os
 
 # --------------------------
 # Azure OpenAI Configuration
@@ -32,37 +30,41 @@ embeddings = AzureOpenAIEmbeddings(
 )
 
 # --------------------------
+# Sample Knowledge Base (replace with your documents/FAQs)
+# --------------------------
+texts = [
+    "TESDA offers various technical vocational education and training programs in the Philippines.",
+    "To enroll in TESDA, you need to register through the TESDA app or their website.",
+    "TESDA provides assessment and certification for skilled workers."
+]
+docs = [Document(page_content=t) for t in texts]
+
+# Split docs (if they are long)
+splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+split_docs = splitter.split_documents(docs)
+
+# --------------------------
+# Create Vector Database
+# --------------------------
+vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
+retriever = vectordb.as_retriever()
+
+# --------------------------
+# Retrieval-Augmented QA Chain
+# --------------------------
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=retriever,
+    chain_type="stuff"
+)
+
+# --------------------------
 # Streamlit UI
 # --------------------------
-st.title("📘 TESDA RAG Chatbot with PDF Upload")
+st.title("TESDA RAG Chatbot 🤖")
 
-uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
+user_question = st.text_input("Ask me anything about TESDA:")
 
-if uploaded_file:
-    # Extract text from PDF
-    pdf_reader = PdfReader(uploaded_file)
-    raw_text = ""
-    for page in pdf_reader.pages:
-        raw_text += page.extract_text() + "\n"
-
-    # Split into chunks
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-    split_docs = splitter.split_documents([Document(page_content=raw_text)])
-
-    # Build vector DB
-    vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
-    retriever = vectordb.as_retriever()
-
-    # Retrieval QA Chain
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=retriever,
-        chain_type="stuff"
-    )
-
-    # User Input
-    user_question = st.text_input("Ask me anything from the uploaded PDF:")
-
-    if user_question:
-        answer = qa_chain.run(user_question)
-        st.write("**Answer:**", answer)
+if user_question:
+    answer = qa_chain.run(user_question)
+    st.write("**Answer:**", answer)
