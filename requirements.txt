@@ -1,6 +1,6 @@
+pip
 
-
-streamlit==1.38.0
+streamlit
 openai==0.28
 chromadb==0.5.3
 tiktoken==0.7.0
