@@ -2,5 +2,6 @@ streamlit
 langchain
 langchain-openai
 chromadb
+chroma-migrate
 tiktoken
 PyPDF2
