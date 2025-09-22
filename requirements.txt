@@ -1,4 +1,5 @@
 streamlit
+pip
 openai==0.28
 AzureOpenAI
 faiss
