@@ -11,7 +11,7 @@ from langchain.vectorstores import FAISS
 # Azure OpenAI Configuration
 # --------------------------
 AZURE_OPENAI_API_KEY = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
-AZURE_OPENAI_ENDPOINT = "https://your-resource-name.openai.azure.com/"
+AZURE_OPENAI_ENDPOINT = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 DEPLOYMENT_NAME = "gpt-35-turbo"   # your deployment name
 EMBEDDING_MODEL = "text-embedding-ada-002"
 
@@ -22,7 +22,7 @@ llm = AzureChatOpenAI(
     azure_endpoint=AZURE_OPENAI_ENDPOINT,
     api_key=AZURE_OPENAI_API_KEY,
     deployment_name=DEPLOYMENT_NAME,
-    api_version="2024-02-15-preview"
+    api_version="2025-01-01-preview"
 )
 
 embeddings = AzureOpenAIEmbeddings(
