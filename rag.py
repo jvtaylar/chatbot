@@ -8,12 +8,12 @@ import numpy as np
 # ----------------------------
 # 1. Setup Azure OpenAI client
 # ----------------------------
-client = AzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version="2024-06-01",
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
-)
+openai.api_type = "azure"
+openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
+openai.api_version = "2025-01-01-preview"
+openai.api_key = "MyKey"
 
+DEPLOYMENT_NAME = "gpt-35-turbo"
 # ----------------------------
 # 2. Sample knowledge base (can replace with documents)
 # ----------------------------
