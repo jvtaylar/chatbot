@@ -1,9 +1,11 @@
 import streamlit as st
 from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
 from langchain.chains import RetrievalQA
-from langchain.vectorstores import Chroma
+# from langchain.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.docstore.document import Document
+from langchain.vectorstores import FAISS
+
 
 # --------------------------
 # Azure OpenAI Configuration
@@ -46,7 +48,9 @@ split_docs = splitter.split_documents(docs)
 # --------------------------
 # Create Vector Database
 # --------------------------
-vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
+# vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
+# retriever = vectordb.as_retriever()
+vectordb = FAISS.from_documents(split_docs, embeddings)
 retriever = vectordb.as_retriever()
 
 # --------------------------
