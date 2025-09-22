@@ -1,6 +1,8 @@
-streamlit
-pip
-openai==0.28
-faiss-cpu
+streamlit>=1.20
+openai>=1.0.0
+requests
+beautifulsoup4
+chromadb
 sentence-transformers
-
+transformers
+torch
