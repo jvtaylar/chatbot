@@ -10,7 +10,7 @@ from langchain.vectorstores import FAISS
 # --------------------------
 # Azure OpenAI Configuration
 # --------------------------
-AZURE_OPENAI_API_KEY = "your_azure_api_key"
+AZURE_OPENAI_API_KEY = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
 AZURE_OPENAI_ENDPOINT = "https://your-resource-name.openai.azure.com/"
 DEPLOYMENT_NAME = "gpt-35-turbo"   # your deployment name
 EMBEDDING_MODEL = "text-embedding-ada-002"
