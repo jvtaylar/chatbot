@@ -10,7 +10,7 @@ from chromadb.utils import embedding_functions
 openai.api_type = "azure"
 openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 openai.api_version = "2025-01-01-preview"
-openai.api_key = "YOUR_AZURE_OPENAI_KEY"
+openai.api_key = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
 
 DEPLOYMENT_NAME = "gpt-35-turbo"
 EMBEDDING_DEPLOYMENT = "text-embedding-ada-002"
