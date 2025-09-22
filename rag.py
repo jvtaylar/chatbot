@@ -1,25 +1,17 @@
 import streamlit as st
 import os
-import openai
-# from openai import AzureOpenAI
-import faiss
-import tiktoken
+from openai import AzureOpenAI
 import numpy as np
-
-
-# import openai
-# import time
-
 
 # ----------------------------
 # 1. Setup Azure OpenAI client
 # ----------------------------
-openai.api_type = "azure"
-openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
-openai.api_version = "2025-01-01-preview"
-openai.api_key = "MyKey"
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    api_version="2024-06-01",
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT")
+)
 
-DEPLOYMENT_NAME = "gpt-35-turbo"
 # ----------------------------
 # 2. Sample knowledge base (can replace with documents)
 # ----------------------------
@@ -30,7 +22,7 @@ docs = [
 ]
 
 # ----------------------------
-# 3. Create embeddings + FAISS index
+# 3. Simple embeddings store (replace FAISS with numpy search)
 # ----------------------------
 embedding_model = "text-embedding-ada-002"
 
@@ -39,20 +31,21 @@ embeddings = [
     client.embeddings.create(input=doc, model=embedding_model).data[0].embedding
     for doc in docs
 ]
-
-# Build FAISS index
-dim = len(embeddings[0])
-index = faiss.IndexFlatL2(dim)
-index.add(np.array(embeddings).astype('float32'))
+embeddings = np.array(embeddings)
 
 # ----------------------------
 # 4. Retrieval + Answer Generation
 # ----------------------------
 def retrieve_context(query, k=1):
     q_emb = client.embeddings.create(input=query, model=embedding_model).data[0].embedding
-    q_emb = np.array([q_emb]).astype('float32')
-    D, I = index.search(q_emb, k)
-    return [docs[i] for i in I[0]]
+    q_emb = np.array(q_emb)
+
+    # Compute cosine similarity
+    similarities = np.dot(embeddings, q_emb) / (
+        np.linalg.norm(embeddings, axis=1) * np.linalg.norm(q_emb)
+    )
+    top_k_idx = similarities.argsort()[-k:][::-1]
+    return [docs[i] for i in top_k_idx]
 
 def generate_answer(query):
     context = retrieve_context(query)
