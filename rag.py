@@ -1,108 +1,70 @@
 import streamlit as st
-import openai
-import time
-import chromadb
-from chromadb.utils import embedding_functions
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
+from langchain.chains import RetrievalQA
+from langchain.vectorstores import Chroma
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
 
 # --------------------------
 # Azure OpenAI Configuration
 # --------------------------
-openai.api_type = "azure"
-openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
-openai.api_version = "2025-01-01-preview"
-openai.api_key = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
-
-DEPLOYMENT_NAME = "gpt-35-turbo"
-EMBEDDING_DEPLOYMENT = "text-embedding-ada-002"
+AZURE_OPENAI_API_KEY = "your_azure_api_key"
+AZURE_OPENAI_ENDPOINT = "https://your-resource-name.openai.azure.com/"
+DEPLOYMENT_NAME = "gpt-35-turbo"   # your deployment name
+EMBEDDING_MODEL = "text-embedding-ada-002"
 
 # --------------------------
-# Streamlit Config
+# Initialize LLM and Embeddings
 # --------------------------
-st.set_page_config(page_title="RAG Chatbot", page_icon="🤖", layout="wide")
-
-# --------------------------
-# Initialize ChromaDB
-# --------------------------
-chroma_client = chromadb.PersistentClient(path="rag_db")
-
-embedding_fn = embedding_functions.OpenAIEmbeddingFunction(
-    api_key=openai.api_key,
-    api_base=openai.api_base,
-    api_type=openai.api_type,
-    api_version=openai.api_version,
-    model_name=EMBEDDING_DEPLOYMENT,
-    deployment=EMBEDDING_DEPLOYMENT,
+llm = AzureChatOpenAI(
+    azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    api_key=AZURE_OPENAI_API_KEY,
+    deployment_name=DEPLOYMENT_NAME,
+    api_version="2024-02-15-preview"
 )
 
-collection = chroma_client.get_or_create_collection(
-    name="docs_collection", embedding_function=embedding_fn
+embeddings = AzureOpenAIEmbeddings(
+    model=EMBEDDING_MODEL,
+    api_key=AZURE_OPENAI_API_KEY,
+    azure_endpoint=AZURE_OPENAI_ENDPOINT
 )
 
 # --------------------------
-# Load documents into Chroma (one-time)
+# Sample Knowledge Base (replace with your documents/FAQs)
 # --------------------------
-if "docs_loaded" not in st.session_state:
-    sample_docs = [
-        {"id": "1", "content": "TESDA provides free technical vocational education and training."},
-        {"id": "2", "content": "You can enroll in TESDA courses online via the TESDA Online Program."},
-        {"id": "3", "content": "TESDA issues National Certificates to graduates who pass competency assessments."},
-    ]
-    for doc in sample_docs:
-        collection.add(documents=[doc["content"]], ids=[doc["id"]])
-    st.session_state.docs_loaded = True
+texts = [
+    "TESDA offers various technical vocational education and training programs in the Philippines.",
+    "To enroll in TESDA, you need to register through the TESDA app or their website.",
+    "TESDA provides assessment and certification for skilled workers."
+]
+docs = [Document(page_content=t) for t in texts]
 
-# --------------------------
-# Conversation History
-# --------------------------
-if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "system", "content": "You are a helpful RAG chatbot. Use retrieved documents when possible."}
-    ]
+# Split docs (if they are long)
+splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+split_docs = splitter.split_documents(docs)
 
 # --------------------------
-# Display Chat
+# Create Vector Database
 # --------------------------
-st.title("🤖 RAG Chatbot with Azure OpenAI + ChromaDB")
-
-for msg in st.session_state.messages:
-    role = "🧑 You" if msg["role"] == "user" else "🤖 Bot"
-    st.markdown(f"**{role}:** {msg['content']}")
+vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
+retriever = vectordb.as_retriever()
 
 # --------------------------
-# User Input
+# Retrieval-Augmented QA Chain
 # --------------------------
-user_input = st.text_input("Ask a question:")
-
-if st.button("🚀 Send") and user_input.strip():
-    # Retrieve relevant docs
-    results = collection.query(query_texts=[user_input], n_results=2)
-    retrieved_texts = " ".join(results["documents"][0]) if results["documents"] else ""
-
-    # Build augmented prompt
-    augmented_query = f"User question: {user_input}\n\nRelevant info:\n{retrieved_texts}\n\nAnswer clearly:"
-
-    st.session_state.messages.append({"role": "user", "content": user_input})
-
-    try:
-        with st.spinner("🤖 Thinking..."):
-            response = openai.ChatCompletion.create(
-                deployment_id=DEPLOYMENT_NAME,
-                messages=st.session_state.messages + [{"role": "system", "content": augmented_query}],
-                temperature=0.5,
-                max_tokens=500
-            )
-        reply = response.choices[0].message["content"].strip()
-    except Exception as e:
-        reply = f"⚠️ Error: {e}"
-
-    st.session_state.messages.append({"role": "assistant", "content": reply})
-    st.rerun()
+qa_chain = RetrievalQA.from_chain_type(
+    llm=llm,
+    retriever=retriever,
+    chain_type="stuff"
+)
 
 # --------------------------
-# Reset Button
+# Streamlit UI
 # --------------------------
-if st.button("🔄 Reset Chat"):
-    st.session_state.messages = [
-        {"role": "system", "content": "You are a helpful RAG chatbot. Use retrieved documents when possible."}
-    ]
-    st.rerun()
+st.title("TESDA RAG Chatbot 🤖")
+
+user_question = st.text_input("Ask me anything about TESDA:")
+
+if user_question:
+    answer = qa_chain.run(user_question)
+    st.write("**Answer:**", answer)
