@@ -1,75 +1,93 @@
-import streamlit as st
-import os
-# from openai import AzureOpenAI
-import numpy as np
-
-# ----------------------------
-# 1. Setup Azure OpenAI client
-# ----------------------------
+# app.py
 import streamlit as st
 import openai
-import time
+import faiss
+import pickle
+from sentence_transformers import SentenceTransformer
 
+# --------------------------
+# Azure OpenAI Configuration
+# --------------------------
 openai.api_type = "azure"
 openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 openai.api_version = "2025-01-01-preview"
 openai.api_key = "MyKey"
 
-DEPLOYMENT_NAME = "gpt-35-turbo"
-# ----------------------------
-# 2. Sample knowledge base (can replace with documents)
-# ----------------------------
-docs = [
-    "Our company offers a 30-day refund policy for all items.",
-    "Shipping usually takes 3-5 business days within the country.",
-    "You can contact support at support@example.com for further assistance."
-]
+# --------------------------
+# Load Embedding Model
+# --------------------------
+embed_model = SentenceTransformer("all-MiniLM-L6-v2")
 
-# ----------------------------
-# 3. Simple embeddings store (replace FAISS with numpy search)
-# ----------------------------
-embedding_model = "text-embedding-ada-002"
+# --------------------------
+# Build / Load FAISS Index
+# --------------------------
+@st.cache_resource
+def load_vectorstore():
+    try:
+        with open("vectorstore.pkl", "rb") as f:
+            return pickle.load(f)
+    except:
+        index = faiss.IndexFlatL2(384)  # 384 dims for MiniLM
+        return {"index": index, "docs": []}
 
-# Get embeddings for docs
-embeddings = [
-    client.embeddings.create(input=doc, model=embedding_model).data[0].embedding
-    for doc in docs
-]
-embeddings = np.array(embeddings)
+vectorstore = load_vectorstore()
 
-# ----------------------------
-# 4. Retrieval + Answer Generation
-# ----------------------------
-def retrieve_context(query, k=1):
-    q_emb = client.embeddings.create(input=query, model=embedding_model).data[0].embedding
-    q_emb = np.array(q_emb)
+def add_document(text: str):
+    embedding = embed_model.encode([text])
+    vectorstore["index"].add(embedding)
+    vectorstore["docs"].append(text)
+    with open("vectorstore.pkl", "wb") as f:
+        pickle.dump(vectorstore, f)
 
-    # Compute cosine similarity
-    similarities = np.dot(embeddings, q_emb) / (
-        np.linalg.norm(embeddings, axis=1) * np.linalg.norm(q_emb)
+def retrieve(query: str, k=3):
+    embedding = embed_model.encode([query])
+    D, I = vectorstore["index"].search(embedding, k)
+    return [vectorstore["docs"][i] for i in I[0] if i < len(vectorstore["docs"])]
+
+# --------------------------
+# Chatbot Response
+# --------------------------
+def chatbot_response(user_message: str) -> str:
+    # Step 1: Retrieve
+    retrieved_docs = retrieve(user_message, k=3)
+    context = "\n".join(retrieved_docs) if retrieved_docs else "No context found."
+
+    # Step 2: Augment prompt
+    prompt = f"""
+    You are a helpful assistant. Use the following context to answer:
+    Context: {context}
+    Question: {user_message}
+    Answer:
+    """
+
+    # Step 3: Call Azure OpenAI
+    response = openai.ChatCompletion.create(
+        engine="gpt-4o-mini",   # Replace with your deployed model name
+        messages=[
+            {"role": "system", "content": "You are a RAG chatbot."},
+            {"role": "user", "content": prompt}
+        ],
+        max_tokens=400
     )
-    top_k_idx = similarities.argsort()[-k:][::-1]
-    return [docs[i] for i in top_k_idx]
 
-def generate_answer(query):
-    context = retrieve_context(query)
-    prompt = f"Answer the question using the context below. If not relevant, say you don’t know.\n\nContext: {context}\n\nQuestion: {query}\nAnswer:"
+    return response["choices"][0]["message"]["content"]
 
-    response = client.chat.completions.create(
-        model="gpt-35-turbo",  # or gpt-4 if available
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3
-    )
-    return response.choices[0].message.content
+# --------------------------
+# Streamlit UI
+# --------------------------
+st.title("🔎 RAG Chatbot (Azure OpenAI + Streamlit)")
 
-# ----------------------------
-# 5. Streamlit UI
-# ----------------------------
-st.set_page_config(page_title="RAG Chatbot", page_icon="🤖")
-st.title("🔎 RAG Chatbot with Azure OpenAI")
+with st.sidebar:
+    st.header("📄 Add Documents")
+    doc_text = st.text_area("Paste a document:")
+    if st.button("Add to Knowledge Base"):
+        if doc_text.strip():
+            add_document(doc_text.strip())
+            st.success("Document added!")
 
-user_query = st.text_input("Ask a question:")
-
-if user_query:
-    answer = generate_answer(user_query)
-    st.write("**Answer:**", answer)
+user_input = st.text_input("Ask me anything:")
+if st.button("Send"):
+    if user_input:
+        with st.spinner("Thinking..."):
+            answer = chatbot_response(user_input)
+        st.markdown(f"**Answer:** {answer}")
