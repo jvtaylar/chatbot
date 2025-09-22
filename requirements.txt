@@ -1,9 +1,6 @@
-streamlit>=1.20
-openai>=1.0.0
-requests
-beautifulsoup4
+streamlit
+langchain
+langchain-openai
 chromadb
-sentence-transformers
-transformers
-torch
-pysqlite3-binary
+tiktoken
+PyPDF2
