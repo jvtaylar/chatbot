@@ -13,7 +13,7 @@ from langchain.vectorstores import FAISS
 AZURE_OPENAI_API_KEY = "FOObvelUv1Ubbw0ZlEb3NPCBYDbdXWbLhzyckQAA9cP3Ofhgi8KWJQQJ99BIACHYHv6XJ3w3AAAAACOGoHUz"
 AZURE_OPENAI_ENDPOINT = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
 DEPLOYMENT_NAME = "gpt-35-turbo"   # your deployment name
-EMBEDDING_MODEL = "text-embedding-ada-002"
+EMBEDDING_MODEL = "text-embedding-3-large"
 
 # --------------------------
 # Initialize LLM and Embeddings
