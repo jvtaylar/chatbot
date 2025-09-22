@@ -1,219 +1,68 @@
-# app.py
-
-# --------------------------
-# Patch sqlite3 with pysqlite3 (for Chroma)
-# --------------------------
-try:
-    __import__('pysqlite3')
-    import sys
-    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-except ImportError:
-    pass
-
 import streamlit as st
-import openai as _openai
-import requests
-from bs4 import BeautifulSoup
-import chromadb
-from chromadb.config import Settings
-from chromadb.utils import embedding_functions
-from sentence_transformers import SentenceTransformer
-from typing import List
+from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
+from langchain.chains import RetrievalQA
+from langchain.vectorstores import Chroma
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
+from PyPDF2 import PdfReader
 import os
-import textwrap
 
 # --------------------------
-# Azure OpenAI Configuration (use your values)
+# Azure OpenAI Configuration
 # --------------------------
-_openai.api_type = "azure"
-_openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
-_openai.api_version = "2025-01-01-preview"
-_openai.api_key = "MyKey"   # <<--- Replace with your real key
+AZURE_OPENAI_API_KEY = "your_azure_api_key"
+AZURE_OPENAI_ENDPOINT = "https://your-resource-name.openai.azure.com/"
+DEPLOYMENT_NAME = "gpt-35-turbo"   # your deployment name
+EMBEDDING_MODEL = "text-embedding-ada-002"
 
-AZURE_DEPLOYMENT_NAME = "gpt-4o-mini"  # replace with your deployed model name
-openai = _openai  # shorthand
+# --------------------------
+# Initialize LLM and Embeddings
+# --------------------------
+llm = AzureChatOpenAI(
+    azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    api_key=AZURE_OPENAI_API_KEY,
+    deployment_name=DEPLOYMENT_NAME,
+    api_version="2024-02-15-preview"
+)
+
+embeddings = AzureOpenAIEmbeddings(
+    model=EMBEDDING_MODEL,
+    api_key=AZURE_OPENAI_API_KEY,
+    azure_endpoint=AZURE_OPENAI_ENDPOINT
+)
 
 # --------------------------
 # Streamlit UI
 # --------------------------
-st.set_page_config(page_title="TESDA FAQ RAG Chatbot", layout="wide")
-st.title("📚 TESDA Customer Support — RAG Chatbot (Streamlit + Azure OpenAI)")
+st.title("📘 TESDA RAG Chatbot with PDF Upload")
 
-cols = st.columns([3, 1])
-left, right = cols
+uploaded_file = st.file_uploader("Upload a PDF file", type=["pdf"])
 
-with right:
-    st.header("Knowledge Base")
-    st.markdown("Scrape TESDA FAQ pages, embed Q/A, and store them in Chroma.")
-    if st.button("(Re)build KB from TESDA FAQ pages"):
-        st.session_state.rebuild = True
+if uploaded_file:
+    # Extract text from PDF
+    pdf_reader = PdfReader(uploaded_file)
+    raw_text = ""
+    for page in pdf_reader.pages:
+        raw_text += page.extract_text() + "\n"
 
-# --------------------------
-# Chroma + Embedding setup
-# --------------------------
-@st.cache_resource
-def get_chroma_client():
-    return chromadb.Client(
-        Settings(
-            chroma_db_impl="duckdb+parquet",
-            persist_directory="./chroma_db"
-        )
+    # Split into chunks
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    split_docs = splitter.split_documents([Document(page_content=raw_text)])
+
+    # Build vector DB
+    vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
+    retriever = vectordb.as_retriever()
+
+    # Retrieval QA Chain
+    qa_chain = RetrievalQA.from_chain_type(
+        llm=llm,
+        retriever=retriever,
+        chain_type="stuff"
     )
 
-client = get_chroma_client()
+    # User Input
+    user_question = st.text_input("Ask me anything from the uploaded PDF:")
 
-@st.cache_resource
-def get_sentence_transformer():
-    return SentenceTransformer("all-MiniLM-L6-v2")
-
-embedder = get_sentence_transformer()
-embedding_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
-    model_name="all-MiniLM-L6-v2",
-    model=embedder
-)
-
-COLLECTION_NAME = "tesda_faqs"
-
-def ensure_collection():
-    try:
-        return client.get_collection(name=COLLECTION_NAME)
-    except Exception:
-        return client.create_collection(name=COLLECTION_NAME, embedding_function=embedding_fn)
-
-collection = ensure_collection()
-
-# --------------------------
-# TESDA Pages (seed URLs)
-# --------------------------
-TESDA_PAGES = [
-    "https://www.tesda.gov.ph/About/Tesda/127",    # Assessment & Certification FAQs
-    "https://e-tesda.gov.ph/local/staticpage/view.php?page=FAQ",  # e-TESDA
-    "https://www.tesda.gov.ph/About/TESDA/25687",  # Scholarship FAQs
-    "https://knowledgebase-bsrs.tesda.gov.ph/"     # BSRS Knowledgebase
-]
-
-# --------------------------
-# Scraping helpers
-# --------------------------
-def fetch_text_from_url(url: str) -> str:
-    try:
-        r = requests.get(url, timeout=12)
-        r.raise_for_status()
-    except Exception as e:
-        st.warning(f"Failed to fetch {url}: {e}")
-        return ""
-    soup = BeautifulSoup(r.text, "html.parser")
-
-    texts = []
-    for qa in soup.select("div.faq, .faq, .faq-item, .question, .faq_list, .panel, .article"):
-        texts.append(qa.get_text(separator="\n").strip())
-
-    if not texts:
-        main = soup.find("main") or soup.find("article") or soup.find("body")
-        texts.append(main.get_text(separator="\n").strip() if main else soup.get_text(separator="\n").strip())
-
-    return "\n\n".join(texts)
-
-def chunk_text(text: str, max_chars=800) -> List[str]:
-    paragraphs = [p.strip() for p in text.split("\n") if p.strip()]
-    chunks, cur = [], ""
-    for p in paragraphs:
-        if len(cur) + len(p) + 1 > max_chars:
-            chunks.append(cur.strip())
-            cur = p
-        else:
-            cur += "\n" + p
-    if cur.strip():
-        chunks.append(cur.strip())
-    return chunks
-
-def build_kb_from_seed(pages: List[str]):
-    col = ensure_collection()
-    try:
-        col.delete()
-        col = client.create_collection(name=COLLECTION_NAME, embedding_function=embedding_fn)
-    except Exception:
-        col = ensure_collection()
-
-    docs, metas, ids = [], [], []
-    for url in pages:
-        st.info(f"Fetching {url}")
-        text = fetch_text_from_url(url)
-        if not text:
-            continue
-        chunks = chunk_text(text)
-        for i, c in enumerate(chunks):
-            docs.append(c)
-            metas.append({"source": url, "chunk": i})
-            ids.append(f"{os.path.basename(url)}_{i}")
-
-    if docs:
-        col.add(documents=docs, metadatas=metas, ids=ids)
-        client.persist()
-        st.success(f"Added {len(docs)} document chunks to Chroma.")
-    else:
-        st.warning("No documents added.")
-
-if st.session_state.get("rebuild", False):
-    build_kb_from_seed(TESDA_PAGES)
-    st.session_state.rebuild = False
-
-# --------------------------
-# Retrieval + Generation
-# --------------------------
-def retrieve_docs(query: str, k=4):
-    col = ensure_collection()
-    results = col.query(query_texts=[query], n_results=k, include=["documents", "metadatas"])
-    combined = []
-    if results and "documents" in results:
-        for d, m in zip(results["documents"][0], results["metadatas"][0]):
-            combined.append({"text": d, "source": m.get("source", "unknown")})
-    return combined
-
-def build_prompt(question: str, retrieved: List[dict]) -> str:
-    context = "\n\n".join([f"Source: {r['source']}\n{r['text']}\n---" for r in retrieved]) or "No context."
-    return f"""You are a TESDA support assistant. Use the context to answer.
-
-Context:
-{context}
-
-User question:
-{question}
-
-Answer:"""
-
-def azure_chat_completion(prompt: str, max_tokens=400) -> str:
-    resp = openai.ChatCompletion.create(
-        engine=AZURE_DEPLOYMENT_NAME,
-        messages=[
-            {"role": "system", "content": "You are a TESDA FAQ assistant."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.0,
-        max_tokens=max_tokens,
-    )
-    return resp["choices"][0]["message"]["content"]
-
-# --------------------------
-# User Interaction
-# --------------------------
-st.markdown("### Ask about TESDA (training, assessment, scholarships, etc.)")
-q = st.text_input("Your question")
-if st.button("Answer"):
-    if not q.strip():
-        st.warning("Please enter a question.")
-    else:
-        with st.spinner("Searching knowledge base..."):
-            retrieved = retrieve_docs(q, k=4)
-        with st.expander("Retrieved snippets"):
-            for i, r in enumerate(retrieved):
-                st.markdown(f"**Snippet {i+1} (Source: {r['source']})**")
-                st.write(textwrap.shorten(r["text"], width=500, placeholder="..."))
-        prompt = build_prompt(q, retrieved)
-        with st.spinner("Calling Azure OpenAI..."):
-            try:
-                answer = azure_chat_completion(prompt)
-                st.markdown("### ✅ Answer")
-                st.write(answer)
-            except Exception as e:
-                st.error(f"Azure OpenAI call failed: {e}")
+    if user_question:
+        answer = qa_chain.run(user_question)
+        st.write("**Answer:**", answer)
