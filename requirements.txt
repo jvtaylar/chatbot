@@ -1,9 +1,2 @@
 streamlit
 openai==0.28
-langchain
-langchain-openai
-langchain-community
-chromadb>=0.4.22
-tiktoken
-PyPDF2
-pysqlite3-binary   # if sqlite is too old
