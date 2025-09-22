@@ -1,70 +1,124 @@
 import streamlit as st
-from langchain_openai import AzureChatOpenAI, AzureOpenAIEmbeddings
-from langchain.chains import RetrievalQA
-from langchain.vectorstores import Chroma
+import openai
+import time
+import os
+from PyPDF2 import PdfReader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.docstore.document import Document
+from langchain_openai import AzureOpenAIEmbeddings
+from langchain.vectorstores import Chroma
 
 # --------------------------
 # Azure OpenAI Configuration
 # --------------------------
-AZURE_OPENAI_API_KEY = "your_azure_api_key"
-AZURE_OPENAI_ENDPOINT = "https://your-resource-name.openai.azure.com/"
-DEPLOYMENT_NAME = "gpt-35-turbo"   # your deployment name
-EMBEDDING_MODEL = "text-embedding-ada-002"
+openai.api_type = "azure"
+openai.api_base = "https://jvtay-mff428jo-eastus2.openai.azure.com/"
+openai.api_version = "2025-01-01-preview"
+openai.api_key = "MyKey"
+DEPLOYMENT_NAME = "gpt-35-turbo"
 
 # --------------------------
-# Initialize LLM and Embeddings
+# Streamlit Page Config
 # --------------------------
-llm = AzureChatOpenAI(
-    azure_endpoint=AZURE_OPENAI_ENDPOINT,
-    api_key=AZURE_OPENAI_API_KEY,
-    deployment_name=DEPLOYMENT_NAME,
-    api_version="2024-02-15-preview"
-)
-
-embeddings = AzureOpenAIEmbeddings(
-    model=EMBEDDING_MODEL,
-    api_key=AZURE_OPENAI_API_KEY,
-    azure_endpoint=AZURE_OPENAI_ENDPOINT
-)
+st.set_page_config(page_title="RAG Copilot Chatbot", page_icon="📘", layout="wide")
 
 # --------------------------
-# Sample Knowledge Base (replace with your documents/FAQs)
+# Sidebar
 # --------------------------
-texts = [
-    "TESDA offers various technical vocational education and training programs in the Philippines.",
-    "To enroll in TESDA, you need to register through the TESDA app or their website.",
-    "TESDA provides assessment and certification for skilled workers."
-]
-docs = [Document(page_content=t) for t in texts]
-
-# Split docs (if they are long)
-splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-split_docs = splitter.split_documents(docs)
+with st.sidebar:
+    st.title("ℹ️ About this Chatbot")
+    st.write("This AI chatbot is powered by **Azure OpenAI + RAG (ChromaDB)**")
+    st.markdown("""
+    ✅ Upload PDFs  
+    ✅ Ask questions from documents  
+    ✅ Context-aware answers  
+    """)
 
 # --------------------------
-# Create Vector Database
+# Upload PDF & Build Knowledge Base
 # --------------------------
-vectordb = Chroma.from_documents(split_docs, embeddings, persist_directory="chroma_db")
-retriever = vectordb.as_retriever()
+uploaded_file = st.file_uploader("📂 Upload a PDF knowledge base", type=["pdf"])
+
+if uploaded_file:
+    pdf_reader = PdfReader(uploaded_file)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text() or ""
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    chunks = splitter.split_text(text)
+
+    # Create embeddings & vectorstore
+    embeddings = AzureOpenAIEmbeddings(
+        model="text-embedding-ada-002",
+        api_key=openai.api_key,
+        azure_endpoint=openai.api_base
+    )
+
+    vectordb = Chroma.from_texts(chunks, embeddings, persist_directory="rag_db")
+    retriever = vectordb.as_retriever()
+
+else:
+    retriever = None
 
 # --------------------------
-# Retrieval-Augmented QA Chain
+# Conversation History
 # --------------------------
-qa_chain = RetrievalQA.from_chain_type(
-    llm=llm,
-    retriever=retriever,
-    chain_type="stuff"
-)
+if "messages" not in st.session_state:
+    st.session_state.messages = [
+        {"role": "system", "content": "You are a helpful AI assistant that uses both general knowledge and the uploaded document context."}
+    ]
 
 # --------------------------
-# Streamlit UI
+# Display Messages
 # --------------------------
-st.title("TESDA RAG Chatbot 🤖")
+st.markdown("<h1 style='text-align: center; color: #0078D7;'>📘 RAG Copilot Chatbot</h1>", unsafe_allow_html=True)
 
-user_question = st.text_input("Ask me anything about TESDA:")
+for msg in st.session_state.messages:
+    if msg["role"] == "user":
+        st.markdown(f"<div style='background:#DCF8C6; padding:10px; border-radius:10px; margin:5px; text-align:right;'>🧑 <b>You:</b> {msg['content']}</div>", unsafe_allow_html=True)
+    elif msg["role"] == "assistant":
+        st.markdown(f"<div style='background:#E6E6FA; padding:10px; border-radius:10px; margin:5px; text-align:left;'>🤖 <b>Bot:</b> {msg['content']}</div>", unsafe_allow_html=True)
 
-if user_question:
-    answer = qa_chain.run(user_question)
-    st.write("**Answer:**", answer)
+# --------------------------
+# User Input
+# --------------------------
+st.markdown("### ✍️ Ask your question")
+user_input = st.text_input("Type your question here:")
+
+if st.button("🚀 Send") and user_input.strip():
+    st.session_state.messages.append({"role": "user", "content": user_input})
+
+    try:
+        with st.spinner("🤖 Bot is searching..."):
+            context = ""
+            if retriever:
+                docs = retriever.get_relevant_documents(user_input)
+                context = "\n".join([d.page_content for d in docs])
+
+            # Combine user query with retrieved context
+            system_prompt = f"Use the following context to answer:\n{context}\n\nQuestion: {user_input}"
+
+            response = openai.ChatCompletion.create(
+                deployment_id=DEPLOYMENT_NAME,
+                messages=[
+                    {"role": "system", "content": "You are a RAG-based assistant. Always cite from context if relevant."},
+                    {"role": "user", "content": system_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=500
+            )
+        reply = response.choices[0].message["content"].strip()
+    except Exception as e:
+        reply = f"⚠️ Error: {e}"
+
+    st.session_state.messages.append({"role": "assistant", "content": reply})
+    st.rerun()
+
+# --------------------------
+# Reset Chat
+# --------------------------
+if st.button("🔄 Reset Chat"):
+    st.session_state.messages = [
+        {"role": "system", "content": "You are a helpful AI assistant with RAG context."}
+    ]
+    st.rerun()
